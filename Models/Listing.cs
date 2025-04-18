@@ -8,7 +8,7 @@
 
         public string? Description { get; set; }
 
-        public int SellerId { get; set; }
+        public string SellerId { get; set; }
 
         public string Brand { get; set; } = null!;
 
@@ -28,9 +28,9 @@
 
         public decimal Price { get; set; }
 
-        public DateTime? CreatedAt { get; set; }
+        public DateTime CreatedAt { get; set; } = DateTime.Now;
 
-        public DateTime? UpdatedAt { get; set; }
+        public DateTime UpdatedAt { get; set; } = DateTime.Now;
 
         public virtual ICollection<ListingImage> ListingImages { get; set; } = new List<ListingImage>();
 
