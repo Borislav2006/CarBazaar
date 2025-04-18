@@ -10,8 +10,16 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using MySql.EntityFrameworkCore.Extensions;
+using DotNetEnv;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
+
+Env.Load();
+string jwtIssuer = Environment.GetEnvironmentVariable("JWT__Issuer");
+string jwtAudience = Environment.GetEnvironmentVariable("JWT__Audience");
+string signingKey = Environment.GetEnvironmentVariable("JWT__SigningKey");
+string connectionString = Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection");
 
 // Add services to the container.
 
@@ -26,9 +34,9 @@ builder.Services.AddControllers().AddJsonOptions(options =>
 builder.Services.AddEntityFrameworkMySQL()
     .AddDbContext<AppDbContext>(options =>
     {
-        options.UseMySQL(builder.Configuration.GetConnectionString("DefaultConnection"));
+        options.UseMySQL(connectionString);
     });
-//builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IListingRepository, ListingRespository>();
 builder.Services.AddScoped<ITokenService, TokenService>();
 
@@ -60,13 +68,11 @@ builder.Services.AddAuthentication(options =>
     options.TokenValidationParameters = new TokenValidationParameters
     {
         ValidateIssuer = true,
-        ValidIssuer = builder.Configuration["JWT:Issuer"],
+        ValidIssuer = jwtIssuer,
         ValidateAudience = true,
-        ValidAudience = builder.Configuration["JWT:Audience"],
+        ValidAudience = jwtAudience,
         ValidateIssuerSigningKey = true,
-        IssuerSigningKey = new SymmetricSecurityKey(
-            System.Text.Encoding.UTF8.GetBytes(builder.Configuration["JWT:SigningKey"])
-        )
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(signingKey))
     };
 
 });

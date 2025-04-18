@@ -5,18 +5,20 @@ using CarBazaar.Interface;
 using CarBazaar.Models;
 using Microsoft.IdentityModel.Tokens;
 using Org.BouncyCastle.Pqc.Crypto.Crystals.Dilithium;
+using DotNetEnv;
 
 namespace CarBazaar.Service
 {
     public class TokenService : ITokenService
     {
-        private readonly IConfiguration configuration;
-        private readonly SymmetricSecurityKey securityKey;
-        public TokenService(IConfiguration configuration)
+        private readonly SymmetricSecurityKey signingKey;
+        private readonly string jwtIssuer;
+        private readonly string jwtAudience;
+        public TokenService()
         {
-            this.configuration = configuration;
-            this.securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration["JWT:SigningKey"]));
-            //_key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["JWT:SigningKey"]));
+            this.signingKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Environment.GetEnvironmentVariable("JWT__SigningKey")));
+            this.jwtIssuer = Environment.GetEnvironmentVariable("JWT__Issuer");
+            this.jwtAudience = Environment.GetEnvironmentVariable("JWT__Audience");
         }
         public string CreateToken(User user)
         {
@@ -27,15 +29,15 @@ namespace CarBazaar.Service
                 new Claim(JwtRegisteredClaimNames.Email, user.Email),
             };
 
-            var creds = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha512Signature);
+            var creds = new SigningCredentials(signingKey, SecurityAlgorithms.HmacSha512Signature);
 
             var TokenDescriptor = new SecurityTokenDescriptor
             {
                 Subject = new ClaimsIdentity(claims),
                 Expires = DateTime.Now.AddDays(7),
                 SigningCredentials = creds,
-                Issuer = configuration["JWT:Issuer"],
-                Audience = configuration["JWT:Audience"]
+                Issuer = jwtIssuer,
+                Audience = jwtAudience
             };
 
             var tokenHandler = new JwtSecurityTokenHandler();

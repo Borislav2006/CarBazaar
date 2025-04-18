@@ -69,9 +69,14 @@ namespace CarBazaar.Mappers
                 {
                     var fileName = $"{Guid.NewGuid()}.jpg";
 
-                    var imagesFolderPath = @"C:\Users\Bobi\Desktop\CarBazaar\Images";
+                    string baseDirectory = Environment.GetEnvironmentVariable("Image_Folder");
 
-                    var filePath = Path.Combine(imagesFolderPath, fileName);
+                    var filePath = Path.Combine(baseDirectory, fileName);
+
+                    if (!Directory.Exists(baseDirectory))
+                    {
+                        Directory.CreateDirectory(baseDirectory);
+                    }
 
                     using (var fileStream = new FileStream(filePath, FileMode.Create))
                     {
