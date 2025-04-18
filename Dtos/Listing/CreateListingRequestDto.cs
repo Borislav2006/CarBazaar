@@ -8,13 +8,14 @@ namespace CarBazaar.Dtos.Listing
         {
             [Required]
             public string Title { get; set; }
+            [Required]
             public string Description { get; set; }
 
             [Required]
             [MinLength(3, ErrorMessage = "Brand name should be atleast 3 characters")]
             public string Brand { get; set; }
             [Required]
-            [MinLength(3, ErrorMessage = "Model name should be atleast 3 characters")]
+            [MinLength(2, ErrorMessage = "Model name should be atleast 2 characters")]
             public string Model { get; set; }
             [Required]
             [Range(1970,2025)]
