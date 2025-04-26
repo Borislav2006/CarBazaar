@@ -24,8 +24,8 @@ public partial class AppDbContext : IdentityDbContext<User>
     {
         base.OnModelCreating(builder);
         builder.Entity<ListingImage>()
-            .HasOne(li => li.Listing) // Each ListingImage has one Listing
-            .WithMany(l => l.ListingImages) // Each Listing can have many ListingImages
-            .HasForeignKey(li => li.ListingId); // Foreign key in ListingImage pointing to Listing
+            .HasOne(li => li.Listing) 
+            .WithMany(l => l.ListingImages) 
+            .HasForeignKey(li => li.ListingId); 
     }
 }

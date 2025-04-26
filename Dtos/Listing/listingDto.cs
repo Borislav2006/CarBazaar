@@ -3,12 +3,11 @@ using CarBazaar.Models;
 
 namespace CarBazaar.Dtos.Listing
 {
-    public class listingDto
+    public class ListingDto
     {
         public int Id { get; set; }
         public string Title { get; set; }
         public string Description { get; set; }
-
         public string Brand { get; set; }
         public string Model { get; set; }
         public int Year { get; set; }

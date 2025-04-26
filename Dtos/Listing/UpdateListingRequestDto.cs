@@ -32,5 +32,7 @@ namespace CarBazaar.Dtos.Listing
         [Required]
         [MinLength(3, ErrorMessage = "Color name should be atleast 3 characters")]
         public string Color { get; set; }
+
+        public List<IFormFile>? Images { get; set; }
     }
 }

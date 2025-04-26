@@ -12,6 +12,7 @@ using Mysqlx.Crud;
 using CarBazaar.Helper;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
+using System.Text.Json;
 
 namespace CarBazaar.Controllers
 {
@@ -41,6 +42,28 @@ namespace CarBazaar.Controllers
             return Ok(listingDto);
         }
 
+        [HttpGet("user")]
+        [Authorize]
+        public async Task<IActionResult> GetUserListings([FromQuery] QueryObject query)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            var userEmail = User.FindFirst(ClaimTypes.Email)?.Value;
+
+            var user = await userRepository.GetUserByEmailAsync(userEmail);
+
+            if (user == null)
+            {
+                return BadRequest("User does not exist");
+            }
+
+            var listing = await listingRepository.GetByUserIdAsync(user.Id);
+
+            var listingDto = listing.Select(s => s.ToListingDto()).ToList();
+
+            return Ok(listingDto);
+        }
 
         [HttpGet("{id:int}")]
         public async Task<IActionResult> GetListingById([FromRoute] int id)
@@ -62,7 +85,7 @@ namespace CarBazaar.Controllers
 
         [HttpPost()]
         [Authorize]
-        public async Task<IActionResult> CreateListing(CreateListingRequestDto ListingDto)
+        public async Task<IActionResult> CreateListing([FromForm] CreateListingRequestDto ListingDto)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
@@ -87,18 +110,18 @@ namespace CarBazaar.Controllers
 
         [HttpPut("{id:int}")]
         [Authorize]
-        public async Task<IActionResult> UpdateLisitng([FromRoute] int id, [FromBody] UpdateListingRequestDto updateDto)
+        public async Task<IActionResult> UpdateLisitng([FromRoute] int id, [FromForm] UpdateListingRequestDto updateDto)
         {
             if (!ModelState.IsValid)
-                return BadRequest(ModelState);
-
-            var listing = await listingRepository.UpdateListingAsync(id, updateDto.ToListingFromUpdateListing());
-            if (listing == null)
             {
-                NotFound("Listing not found");
+                return BadRequest(ModelState);
             }
 
-            return Ok(listing.ToListingDto());
+            var listing = await updateDto.ToListingFromUpdateListing();
+
+           await listingRepository.UpdateListingAsync(id, listing);
+
+            return Ok();
         }
 
         [HttpDelete("{id:int}")]

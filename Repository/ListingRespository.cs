@@ -1,9 +1,7 @@
-﻿using CarBazaar.Dtos.Listing;
-using CarBazaar.Models;
+﻿using CarBazaar.Models;
 using CarBazaar.Interface;
 using Microsoft.EntityFrameworkCore;
 using CarBazaar.Helper;
-using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace CarBazaar.Repository
 {
@@ -24,13 +22,16 @@ namespace CarBazaar.Repository
 
         public async Task<Listing> DeleteListingAsync(int id)
         {
-            var listing = await DbContext.Listings.FirstOrDefaultAsync(x => x.Id == id);
+            var listing = await DbContext.Listings.FirstOrDefaultAsync(x => x.Id == id); 
 
             if (listing == null)
             {
                 return null;
             }
+
             DbContext.Listings.Remove(listing);
+            await DbContext.SaveChangesAsync();
+            
             return listing;
         }
 
@@ -94,7 +95,6 @@ namespace CarBazaar.Repository
                     listings = query.IsDecsending ? listings.OrderByDescending(s => s.CreatedAt) : listings.OrderBy(s => s.CreatedAt);
                 }
             }
-            // SortBy:Model,Price,Brand,CreatedTime
 
             var skipNumber = (query.PageNumber - 1) * query.PageSize;
 
@@ -104,8 +104,19 @@ namespace CarBazaar.Repository
         public async Task<Listing?> GetByIdAsync(int id)
         {
            var listing = await DbContext.Listings.AsNoTracking().Include(l => l.ListingImages).Include(s => s.Seller).FirstOrDefaultAsync(i => i.Id == id);
-            Console.WriteLine("Test: " + listing.ToString());
             return listing;
+        }
+
+        public async Task<List<Listing>> GetByUserIdAsync(string userId)
+        {
+            var listings = await DbContext.Listings
+                .AsNoTracking()
+                .Include(l => l.ListingImages)
+                .Include(l => l.Seller)
+                .Where(l => l.SellerId == userId)
+                .ToListAsync();
+
+            return listings;
         }
 
         public Task<bool> SellerExist(int id)
@@ -133,6 +144,8 @@ namespace CarBazaar.Repository
             existingLisitng.HorsePower = lisitngDto.HorsePower;
             existingLisitng.GearBox = lisitngDto.GearBox;
             existingLisitng.Color = lisitngDto.Color;
+            existingLisitng.ListingImages = lisitngDto.ListingImages;
+           
 
             await DbContext.SaveChangesAsync();
 

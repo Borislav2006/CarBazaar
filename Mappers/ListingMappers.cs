@@ -1,11 +1,7 @@
-﻿using System;
-using CarBazaar.Dtos.Listing;
+﻿using CarBazaar.Dtos.Listing;
 using CarBazaar.Dtos.Listing.CarBazaar;
 using CarBazaar.Dtos.User;
-using CarBazaar.Interface;
 using CarBazaar.Models;
-using CarBazaar.Repository;
-using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace CarBazaar.Mappers
 {
@@ -13,7 +9,6 @@ namespace CarBazaar.Mappers
     {
         public static listingDto ToListingDto(this Listing listing)
         {
-            //var user = await userRepository.GetUserByIdAsync(listing.SellerId);
 
             return new listingDto
             {
@@ -85,15 +80,15 @@ namespace CarBazaar.Mappers
 
                     listing.ListingImages.Add(new ListingImage
                     {
-                        ImgPath = $"images/{fileName}"
+                        ImgPath = fileName
                     });
                 }
             }
             return listing;
         }
-        public static Listing ToListingFromUpdateListing(this UpdateListingRequestDto listingDto)
+        public static async Task<Listing> ToListingFromUpdateListing(this UpdateListingRequestDto listingDto)
         {
-            return new Listing
+            var listing = new Listing
             {
                 Title = listingDto.Title,
                 Description = listingDto.Description,
@@ -106,7 +101,37 @@ namespace CarBazaar.Mappers
                 HorsePower = listingDto.HorsePower,
                 GearBox = listingDto.GearBox,
                 Color = listingDto.Color,
+                ListingImages = new List<ListingImage>()
             };
+
+            if (listingDto.Images != null)
+            {
+                foreach (var image in listingDto.Images)
+                {
+                    var fileName = $"{Guid.NewGuid()}.jpg";
+
+                    string baseDirectory = Environment.GetEnvironmentVariable("Image_Folder");
+
+                    var filePath = Path.Combine(baseDirectory, fileName);
+
+                    if (!Directory.Exists(baseDirectory))
+                    {
+                        Directory.CreateDirectory(baseDirectory);
+                    }
+
+                    using (var fileStream = new FileStream(filePath, FileMode.Create))
+                    {
+                        await image.CopyToAsync(fileStream);
+                    }
+
+                    listing.ListingImages.Add(new ListingImage
+                    {
+                        ImgPath = fileName
+                    });
+                }
+            }
+
+            return listing;
         }
     }
 }

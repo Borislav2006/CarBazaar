@@ -12,6 +12,7 @@ using Microsoft.OpenApi.Models;
 using MySql.EntityFrameworkCore.Extensions;
 using DotNetEnv;
 using System.Text;
+using Microsoft.Extensions.FileProviders;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -21,10 +22,10 @@ string jwtAudience = Environment.GetEnvironmentVariable("JWT__Audience");
 string signingKey = Environment.GetEnvironmentVariable("JWT__SigningKey");
 string connectionString = Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection");
 
-// Add services to the container.
+
 
 builder.Services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddControllers().AddJsonOptions(options =>
@@ -105,14 +106,36 @@ builder.Services.AddSwaggerGen(option =>
     });
 });
 
+var MyAllowSpecificOrigins = "_myAllowSpecificOrigins";
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy(name: MyAllowSpecificOrigins,
+        policy =>
+        {
+            policy.WithOrigins("http://localhost:5173")
+                  .AllowAnyHeader()
+                  .AllowAnyMethod()
+                  .AllowCredentials(); 
+        });
+});
+
+string baseDirectory = Environment.GetEnvironmentVariable("Image_Folder");
+
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new PhysicalFileProvider(baseDirectory),
+    RequestPath = "/images"
+});
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+app.UseCors(MyAllowSpecificOrigins);
 
 app.UseHttpsRedirection();
 
