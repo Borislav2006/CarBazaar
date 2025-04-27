@@ -2,6 +2,8 @@
 using CarBazaar.Interface;
 using Microsoft.EntityFrameworkCore;
 using CarBazaar.Helper;
+using System.Text.Json;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace CarBazaar.Repository
 {
@@ -35,8 +37,14 @@ namespace CarBazaar.Repository
             return listing;
         }
 
-        public async Task<List<Listing>> GetAllAsync(QueryObject query)
+        public class PaginatedResult<T>
         {
+            public List<T> Items { get; set; }
+            public int TotalCount { get; set; }
+        }
+
+        public async Task<PaginatedResult<Listing>> GetAllAsync(QueryObject query)
+        { 
             var listings = DbContext.Listings.Include(i => i.ListingImages).Include(s => s.Seller).AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(query.Brand))
@@ -53,6 +61,10 @@ namespace CarBazaar.Repository
             {
                 listings = listings.Where(s => s.EngineType == query.EngineType);
             }
+            if (!string.IsNullOrWhiteSpace(query.FuelType))
+            {
+                listings = listings.Where(s => s.FuelType == query.FuelType);
+            }
 
             if (!string.IsNullOrWhiteSpace(query.GearBox))
             {
@@ -68,7 +80,7 @@ namespace CarBazaar.Repository
             {
                 if (query.SortBy.Equals("Brand", StringComparison.OrdinalIgnoreCase))
                 {
-                    listings = query.IsDecsending ? listings.OrderByDescending(s => s.Brand) : listings.OrderBy(s => s.Brand);
+                    listings = query.IsDescending ? listings.OrderByDescending(s => s.Brand) : listings.OrderBy(s => s.Brand);
                 }
             }
 
@@ -76,7 +88,7 @@ namespace CarBazaar.Repository
             {
                 if (query.SortBy.Equals("Model", StringComparison.OrdinalIgnoreCase))
                 {
-                    listings = query.IsDecsending ? listings.OrderByDescending(s => s.Model) : listings.OrderBy(s => s.Model);
+                    listings = query.IsDescending ? listings.OrderByDescending(s => s.Model) : listings.OrderBy(s => s.Model);
                 }
             }
 
@@ -84,7 +96,7 @@ namespace CarBazaar.Repository
             {
                 if (query.SortBy.Equals("Price", StringComparison.OrdinalIgnoreCase))
                 {
-                    listings = query.IsDecsending ? listings.OrderByDescending(s => s.Price) : listings.OrderBy(s => s.Price);
+                    listings = query.IsDescending ? listings.OrderByDescending(s => s.Price) : listings.OrderBy(s => s.Price);
                 }
             }
 
@@ -92,13 +104,21 @@ namespace CarBazaar.Repository
             {
                 if (query.SortBy.Equals("Created", StringComparison.OrdinalIgnoreCase))
                 {
-                    listings = query.IsDecsending ? listings.OrderByDescending(s => s.CreatedAt) : listings.OrderBy(s => s.CreatedAt);
+                    listings = query.IsDescending ? listings.OrderByDescending(s => s.CreatedAt) : listings.OrderBy(s => s.CreatedAt);
                 }
             }
 
+            var totalCount = await listings.CountAsync();
+
             var skipNumber = (query.PageNumber - 1) * query.PageSize;
 
-            return await listings.Skip(skipNumber).Take(query.PageSize).ToListAsync();
+            var pagedListings = await listings.Skip(skipNumber).Take(query.PageSize).ToListAsync();
+
+            return new PaginatedResult<Listing>
+            {
+                Items = pagedListings,
+                TotalCount = totalCount
+            };
         }
 
         public async Task<Listing?> GetByIdAsync(int id)
@@ -107,17 +127,50 @@ namespace CarBazaar.Repository
             return listing;
         }
 
-        public async Task<List<Listing>> GetByUserIdAsync(string userId)
+        public async Task<List<Listing>> GetByUserIdAsync(string userId, QueryObject query)
         {
-            var listings = await DbContext.Listings
+            var listings = DbContext.Listings
                 .AsNoTracking()
                 .Include(l => l.ListingImages)
                 .Include(l => l.Seller)
                 .Where(l => l.SellerId == userId)
-                .ToListAsync();
+                .AsQueryable();
 
-            return listings;
+            if (!string.IsNullOrWhiteSpace(query.SortBy))
+            {
+                if (query.SortBy.Equals("Brand", StringComparison.OrdinalIgnoreCase))
+                {
+                    listings = query.IsDescending ? listings.OrderByDescending(s => s.Brand) : listings.OrderBy(s => s.Brand);
+                }
+            }
+
+            if (!string.IsNullOrWhiteSpace(query.SortBy))
+            {
+                if (query.SortBy.Equals("Model", StringComparison.OrdinalIgnoreCase))
+                {
+                    listings = query.IsDescending ? listings.OrderByDescending(s => s.Model) : listings.OrderBy(s => s.Model);
+                }
+            }
+
+            if (!string.IsNullOrWhiteSpace(query.SortBy))
+            {
+                if (query.SortBy.Equals("Price", StringComparison.OrdinalIgnoreCase))
+                {
+                    listings = query.IsDescending
+                        ? listings.OrderByDescending(s => s.Price)
+                        : listings.OrderBy(s => s.Price);
+                }
+                else if (query.SortBy.Equals("Created", StringComparison.OrdinalIgnoreCase))
+                {
+                    listings = query.IsDescending
+                        ? listings.OrderByDescending(s => s.CreatedAt)
+                        : listings.OrderBy(s => s.CreatedAt);
+                }
+            }
+
+            return await listings.ToListAsync();
         }
+
 
         public Task<bool> SellerExist(int id)
         {
@@ -141,6 +194,7 @@ namespace CarBazaar.Repository
             existingLisitng.Milage = lisitngDto.Milage;
             existingLisitng.Price = lisitngDto.Price;
             existingLisitng.EngineType = lisitngDto.EngineType;
+            existingLisitng.FuelType = lisitngDto.FuelType;
             existingLisitng.HorsePower = lisitngDto.HorsePower;
             existingLisitng.GearBox = lisitngDto.GearBox;
             existingLisitng.Color = lisitngDto.Color;

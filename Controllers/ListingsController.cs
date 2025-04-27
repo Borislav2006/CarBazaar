@@ -32,14 +32,21 @@ namespace CarBazaar.Controllers
         [HttpGet]
         public async Task<IActionResult> GetAll([FromQuery] QueryObject query)
         {
-            if(!ModelState.IsValid)
+            if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
             var listing = await listingRepository.GetAllAsync(query);
 
-            var listingDto = listing.Select(s => s.ToListingDto()).ToList();
+            var listingDto = listing.Items.Select(s => s.ToListingDto()).ToList();
 
-            return Ok(listingDto);
+            var response = new
+            {
+                Items = listingDto,
+                TotalCount = listing.TotalCount,
+                TotalPages = Math.Ceiling((double)listing.TotalCount / query.PageSize)
+            };
+
+            return Ok(response);
         }
 
         [HttpGet("user")]
@@ -58,7 +65,7 @@ namespace CarBazaar.Controllers
                 return BadRequest("User does not exist");
             }
 
-            var listing = await listingRepository.GetByUserIdAsync(user.Id);
+            var listing = await listingRepository.GetByUserIdAsync(user.Id, query);
 
             var listingDto = listing.Select(s => s.ToListingDto()).ToList();
 
@@ -72,13 +79,11 @@ namespace CarBazaar.Controllers
                 return BadRequest(ModelState);
 
             var listing = await listingRepository.GetByIdAsync(id);
-            Console.WriteLine("Test: " + listing.ToString());
 
             if (listing == null)
             {
                 return NotFound();
             }
-            // we have to return user information 
             return Ok(listing.ToListingDto());
         }
 
@@ -116,10 +121,25 @@ namespace CarBazaar.Controllers
             {
                 return BadRequest(ModelState);
             }
+            var updaterEmail = User.FindFirst(ClaimTypes.Email)?.Value;
 
-            var listing = await updateDto.ToListingFromUpdateListing();
+            if (updaterEmail == null)
+            {
+                return Unauthorized("You are not authorized.");
+            }
 
-           await listingRepository.UpdateListingAsync(id, listing);
+            var user = await userRepository.GetUserByEmailAsync(updaterEmail);
+
+            var listing = await listingRepository.GetByIdAsync(id);
+
+            if (user.Id != listing.SellerId)
+            {
+                return Unauthorized("You are not the owner!");
+            }
+
+            var updatedListing = await updateDto.ToListingFromUpdateListing();
+
+           await listingRepository.UpdateListingAsync(id, updatedListing);
 
             return Ok();
         }
@@ -131,13 +151,29 @@ namespace CarBazaar.Controllers
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            var listing = await listingRepository.DeleteListingAsync(id);
+            var updaterEmail = User.FindFirst(ClaimTypes.Email)?.Value;
 
-            if (listing == null)
+            if (updaterEmail == null)
+            {
+                return Unauthorized("You are not authorized.");
+            }
+
+            var user = await userRepository.GetUserByEmailAsync(updaterEmail);
+
+            var listing = await listingRepository.GetByIdAsync(id);
+
+            if (user.Id != listing?.SellerId)
+            {
+                return Unauthorized("You are not the owner!");
+            }
+
+            var deletedListing = await listingRepository.DeleteListingAsync(id);
+
+            if (deletedListing == null)
             {
                 return NotFound("Lisitng does not exist");
             }
-            return Ok(listing);
+            return Ok(deletedListing);
         }
     }
 }

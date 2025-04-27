@@ -25,6 +25,8 @@ namespace CarBazaar.Dtos.Listing
         [Required]
         public string EngineType { get; set; }
         [Required]
+        public string FuelType { get; set; }
+        [Required]
         [Range(1,1000)]
         public int HorsePower { get; set; }
         [Required]
@@ -32,7 +34,6 @@ namespace CarBazaar.Dtos.Listing
         [Required]
         [MinLength(3, ErrorMessage = "Color name should be atleast 3 characters")]
         public string Color { get; set; }
-
         public List<IFormFile>? Images { get; set; }
     }
 }

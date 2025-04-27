@@ -29,6 +29,8 @@ namespace CarBazaar.Dtos.Listing
             [Required]
             public string EngineType { get; set; }
             [Required]
+            public string FuelType { get; set; }
+            [Required]
             [Range(1, 1000)]
             public int HorsePower { get; set; }
             [Required]

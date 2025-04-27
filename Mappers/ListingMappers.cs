@@ -7,10 +7,10 @@ namespace CarBazaar.Mappers
 {
     public static class ListingMappers
     {
-        public static listingDto ToListingDto(this Listing listing)
+        public static ListingDto ToListingDto(this Listing listing)
         {
 
-            return new listingDto
+            return new ListingDto
             {
                 Id = listing.Id,
                 Title = listing.Title,
@@ -21,9 +21,12 @@ namespace CarBazaar.Mappers
                 Milage = listing.Milage,
                 Price = listing.Price,
                 EngineType = listing.EngineType,
+                FuelType = listing.FuelType,
                 HorsePower = listing.HorsePower,
                 GearBox = listing.GearBox,
                 Color = listing.Color,
+                CreatedAt = listing.CreatedAt,
+                UpdatedAt = listing.UpdatedAt,
                 Images = listing.ListingImages.Select(img => new ListingImageDto
                 {
                     Id = img.Id,
@@ -51,6 +54,7 @@ namespace CarBazaar.Mappers
                 Milage = listingDto.Milage,
                 Price = listingDto.Price,
                 EngineType = listingDto.EngineType,
+                FuelType = listingDto.FuelType,
                 HorsePower = listingDto.HorsePower,
                 GearBox = listingDto.GearBox,
                 Color = listingDto.Color,
@@ -98,6 +102,7 @@ namespace CarBazaar.Mappers
                 Milage = listingDto.Milage,
                 Price = listingDto.Price,
                 EngineType = listingDto.EngineType,
+                FuelType = listingDto.FuelType,
                 HorsePower = listingDto.HorsePower,
                 GearBox = listingDto.GearBox,
                 Color = listingDto.Color,
